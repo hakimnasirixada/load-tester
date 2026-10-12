@@ -13,3 +13,4 @@ Thumbs.db
 # Test reports / outputs
 reports/
 *.log
+data/

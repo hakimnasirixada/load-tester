@@ -1,0 +1,73 @@
+================================================================================
+LOAD TESTER & BENCHMARK COMMANDS CHEATSHEET
+================================================================================
+
+All commands should be run in your terminal from the project folder:
+d:\web dev tests\load taster
+
+--------------------------------------------------------------------------------
+1. START / STOP SERVER
+--------------------------------------------------------------------------------
+
+# Start the server (Express + PostgreSQL + Web Dashboard):
+npm start
+
+# Or directly with node:
+node server.js
+
+# If you get "listen EADDRINUSE: address already in use :::3000":
+# Run this in PowerShell to find and kill the process using port 3000:
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
+
+# Web Dashboard:    http://localhost:3000
+# Live Telemetry:   http://localhost:3000/metrics
+# Health Check:     http://localhost:3000/health
+
+--------------------------------------------------------------------------------
+2. RUN K6 LOAD TEST (WITH USEFUL FLAGS)
+--------------------------------------------------------------------------------
+
+# Standard run using npm script:
+npm run test:k6
+
+# Direct command with full path:
+k6 run k6/test-script.js
+
+# Run against a different target host or port (using environment flag):
+k6 run -e TARGET_URL=http://localhost:3000 k6/test-script.js
+
+# Quick 30-second Smoke Test (override duration and VUs for a quick check):
+k6 run --vus 50 --duration 30s k6/test-script.js
+
+# Run with real-time web dashboard provided by k6 (browser GUI report):
+k6 run --out web-dashboard=export=report.html k6/test-script.js
+
+# Run silently (clean terminal output, summary only):
+k6 run -q k6/test-script.js
+
+# Export full test results to a JSON file for analysis:
+k6 run --summary-export=results-summary.json k6/test-script.js
+
+--------------------------------------------------------------------------------
+3. RUN BUILT-IN NODE SIMULATOR (ZERO INSTALLATION / NO K6 NEEDED)
+--------------------------------------------------------------------------------
+
+# Runs the native Node.js load simulator (500-700 Peer RPS + 100-200 Admin RPS):
+node src/simulator.js
+
+--------------------------------------------------------------------------------
+4. USEFUL POWERSHELL / CURL ONE-LINERS FOR QUICK CHECKS
+--------------------------------------------------------------------------------
+
+# Check live RPS and endpoint counters:
+curl -s http://localhost:3000/metrics
+
+# Check stored scripts in PostgreSQL:
+curl -s http://localhost:3000/api/scripts
+
+# Post a test script to PostgreSQL via curl:
+curl -X POST http://localhost:3000/api/scripts `
+  -H "Content-Type: application/json" `
+  -d "{\"title\":\"My Custom Script\",\"script_content\":\"export default function(){}\",\"category\":\"Benchmark\"}"
+
+================================================================================

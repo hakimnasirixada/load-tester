@@ -35,7 +35,9 @@ load taster/
 ```bash
 npm start
 ```
-By default, the server runs on `http://localhost:3000`.
+- **Web UI & Dashboard**: [http://localhost:3000](http://localhost:3000) (Live endpoint counters, traffic simulator, and PostgreSQL script manager)
+- **Metrics Telemetry**: [http://localhost:3000/metrics](http://localhost:3000/metrics)
+- **Health Check**: [http://localhost:3000/health](http://localhost:3000/health)
 
 ### 2. Available Endpoints
 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Load Tester Command Center & PostgreSQL Management</title>
+  <meta name="description" content="Real-time metrics, endpoint throughput telemetry, and PostgreSQL load test script manager.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Header -->
+    <header class="header-nav">
+      <div class="brand-section">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-title">
+          <h1>LOAD TESTER TELEMETRY & POSTGRESQL</h1>
+          <p>Real-time endpoint metrics & benchmark script database</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <div class="status-badge" id="server-status-badge">
+          <span class="status-dot"></span>
+          <span id="server-status-text">SYSTEM HEALTHY</span>
+        </div>
+        <div class="control-group">
+          <span>Telemetry Refresh:</span>
+          <select id="refresh-interval-select" class="interval-select">
+            <option value="1000" selected>1s (Live Real-time)</option>
+            <option value="3000">3s Interval</option>
+            <option value="5000">5s Interval</option>
+            <option value="300000">5 min Interval</option>
+            <option value="600000">10 min Interval</option>
+            <option value="0">Manual Only</option>
+          </select>
+        </div>
+        <button id="btn-manual-refresh" class="btn btn-secondary btn-sm" title="Refresh metrics now">⟳ Sync</button>
+      </div>
+    </header>
+
+    <!-- Top KPI Stat Grid -->
+    <section class="stat-grid" aria-label="Key Performance Indicators">
+      <div class="stat-card">
+        <div class="stat-label">Current Throughput</div>
+        <div class="stat-value" id="stat-rps">0 <span style="font-size:1rem;color:var(--text-dim)">RPS</span></div>
+        <div class="stat-subtext" id="stat-target-rps">Target Peer: 300-500 RPS</div>
+      </div>
+
+      <div class="stat-card card-accent-purple">
+        <div class="stat-label">Total HTTP Requests</div>
+        <div class="stat-value" id="stat-total-requests">0</div>
+        <div class="stat-subtext" id="stat-uptime">Uptime: 0s</div>
+      </div>
+
+      <div class="stat-card card-accent-emerald">
+        <div class="stat-label">In-Memory Cache Hits</div>
+        <div class="stat-value" id="stat-cache-hitrate">0.0%</div>
+        <div class="stat-subtext" id="stat-cache-detail">0 hits / 0 misses</div>
+      </div>
+
+      <div class="stat-card card-accent-amber">
+        <div class="stat-label">Async Job Queue</div>
+        <div class="stat-value" id="stat-queue-active">0 <span style="font-size:1rem;color:var(--text-dim)">Jobs</span></div>
+        <div class="stat-subtext" id="stat-queue-completed">Completed: 0</div>
+      </div>
+
+      <div class="stat-card card-accent-rose">
+        <div class="stat-label">PostgreSQL Scripts</div>
+        <div class="stat-value" id="stat-pg-scripts">0</div>
+        <div class="stat-subtext">Engine: Embedded PostgreSQL (PGlite)</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container" role="tablist">
+      <button class="tab-btn active" id="tab-btn-endpoints" data-tab="endpoints">📊 Endpoints & Traffic</button>
+      <button class="tab-btn" id="tab-btn-database" data-tab="database">🐘 PostgreSQL Scripts Database</button>
+      <button class="tab-btn" id="tab-btn-traffic" data-tab="traffic">🚀 Traffic Generator</button>
+      <button class="tab-btn" id="tab-btn-system" data-tab="system">🖥️ System & Audit Trail</button>
+    </div>
+
+    <!-- TAB 1: ENDPOINTS & TRAFFIC BREAKDOWN -->
+    <div class="tab-content active" id="tab-endpoints">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Live Endpoint Request Counters & Volume</span>
+          </div>
+          <span class="card-badge" id="total-endpoints-count">0 Endpoints monitored</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="endpoints-table">
+            <thead>
+              <tr>
+                <th style="width: 220px;">Method & Route</th>
+                <th>Request Share</th>
+                <th style="width: 140px;">Total Calls</th>
+                <th style="width: 120px;">Error Count</th>
+                <th style="width: 160px;">Last Activity</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="endpoints-tbody">
+              <tr>
+                <td colspan="6" style="text-align:center;color:var(--text-dim);padding:24px;">No requests captured yet. Trigger requests or run the traffic generator below!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: POSTGRESQL SCRIPTS DATABASE (Admin Writes to actual DB) -->
+    <div class="tab-content" id="tab-database">
+      <div class="dashboard-grid">
+        <!-- Script Creator Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Write Test Script to PostgreSQL</span>
+            </div>
+            <span class="card-badge">table: scripts</span>
+          </div>
+          <form id="create-script-form">
+            <div class="form-group">
+              <label class="form-label" for="script-title">Script Title</label>
+              <input type="text" id="script-title" class="form-input" placeholder="e.g. k6 Peak Concurrency Stress Test" required>
+            </div>
+            <div style="display: flex; gap: 14px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label" for="script-category">Category</label>
+                <select id="script-category" class="form-input">
+                  <option value="Peer Load">Peer Load (300-500 RPS)</option>
+                  <option value="Admin Heavy">Admin Heavy (50-100 RPS)</option>
+                  <option value="Soak Test">Soak Test (Long Duration)</option>
+                  <option value="Spike Test">Spike Test</option>
+                  <option value="Smoke Test">Smoke Test</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label" for="script-status">Status</label>
+                <select id="script-status" class="form-input">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="script-content">Script Code / Definition (JavaScript / k6 / JSON)</label>
+              <textarea id="script-content" class="form-input code-editor" required placeholder="// Enter your test execution script here...
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  vus: 100,
+  duration: '30s',
+};
+
+export default function () {
+  http.get('http://localhost:3000/api/feed');
+  sleep(0.1);
+}"></textarea>
+            </div>
+            <div style="display:flex; justify-content: space-between; align-items:center;">
+              <button type="button" id="btn-load-template" class="btn btn-secondary btn-sm">Load k6 Template</button>
+              <button type="submit" class="btn btn-primary" id="btn-save-script">💾 Write Script to PostgreSQL</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Saved Scripts List from PostgreSQL -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>PostgreSQL Stored Scripts</span>
+            </div>
+            <button id="btn-refresh-scripts" class="btn btn-secondary btn-sm">⟳ Reload</button>
+          </div>
+          <div id="scripts-list-container" style="max-height: 520px; overflow-y: auto;">
+            <p style="color:var(--text-dim);font-size:0.85rem;">Loading scripts from PostgreSQL database...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TRAFFIC GENERATOR -->
+    <div class="tab-content" id="tab-traffic">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Simulate Traffic & Benchmarks</span>
+          </div>
+          <span class="card-badge">Instant Load Generator</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px;">
+          Fire batches of requests into the server directly from the browser to monitor live endpoint distribution and RPS counters in real-time.
+        </p>
+
+        <div class="test-suite-panel">
+          <div class="action-card">
+            <div>
+              <h3>Peer Traffic Burst</h3>
+              <p>Triggers cached GET requests (/api/feed, /api/users, /api/records, /api/search).</p>
+            </div>
+            <button id="btn-burst-peer" class="btn btn-primary">⚡ Send 100 Peer Requests</button>
+          </div>
+
+          <div class="action-card">
+            <div>
+              <h3>Admin Heavy Bulk Ingest</h3>
+              <p>Sends POST /api/admin/bulk-upload with 50 generated entries to invalidate cache.</p>
+            </div>
+            <button id="btn-burst-admin" class="btn btn-secondary">📦 Trigger Admin Bulk Ingest</button>
+          </div>
+
+          <div class="action-card">
+            <div>
+              <h3>CPU Report Generation</h3>
+              <p>Queues asynchronous CPU-intensive report calculation with digest computation.</p>
+            </div>
+            <button id="btn-burst-report" class="btn btn-secondary">📑 Queue Admin Report Job</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SYSTEM & AUDIT -->
+    <div class="tab-content" id="tab-system">
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Memory & Host Telemetry</div>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <tbody>
+                <tr>
+                  <td>Node.js RSS Memory</td>
+                  <td id="sys-mem-rss" class="code-badge">-</td>
+                </tr>
+                <tr>
+                  <td>Heap Used / Total</td>
+                  <td id="sys-mem-heap" class="code-badge">-</td>
+                </tr>
+                <tr>
+                  <td>Pre-seeded Users in Store</td>
+                  <td id="sys-store-users" class="code-badge">7,000 users (700 Admins, 6,300 Peers)</td>
+                </tr>
+                <tr>
+                  <td>Pre-seeded Records in Store</td>
+                  <td id="sys-store-records" class="code-badge">10,000 feed records</td>
+                </tr>
+                <tr>
+                  <td>Database Backend</td>
+                  <td class="code-badge" style="color:var(--accent-emerald);">PostgreSQL (Embedded PGlite, disk persistent)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">PostgreSQL Admin Audit Log</div>
+            <span class="card-badge">table: audit_logs</span>
+          </div>
+          <div id="audit-log-container" style="max-height: 300px; overflow-y: auto; font-size: 0.82rem;">
+            <p style="color:var(--text-dim);">No audit entries yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-root"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

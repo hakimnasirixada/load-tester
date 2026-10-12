@@ -8,6 +8,7 @@
     "test:k6": "k6 run k6/test-script.js"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
     "express": "^4.19.2"
   }
 }
