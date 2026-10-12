@@ -1,0 +1,13 @@
+{
+  "name": "load-tester-server",
+  "version": "1.0.0",
+  "description": "High throughput Express server with in-memory caching and queue for k6 load testing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test:k6": "k6 run k6/test-script.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
